@@ -36,8 +36,10 @@ try:
         df = df[df.Symbol == symbol].reset_index(drop=True)
     col = st.sidebar.selectbox(
         "Price column",
-        [c for c in df if c not in ["Date", "Symbol"]],
-        index=list(c for c in df if c not in ["Date", "Symbol"]).index("Close")
+        [c for c in df if c not in ["Date", "Symbol", "Volume"]],
+        index=list(c for c in df if c not in ["Date", "Symbol", "Volume"]).index(
+            "Close"
+        )
         if "Close" in df
         else 0,
     )
@@ -74,7 +76,10 @@ try:
         ["Price evidence", "Scenario assumptions", "Review notes", "Download & audit"]
     )
     with overview:
-        st.line_chart(df.set_index("Date")[col] if "Date" in df else df[col])
+        chart = df.copy()
+        if "Date" in chart:
+            chart["Date"] = pd.to_datetime(chart["Date"])
+        st.line_chart(chart.set_index("Date")[col] if "Date" in chart else chart[col])
         if all(x in df for x in ["Open", "High", "Low", "Close"]) and col == "Close":
             image = io.BytesIO()
             render_chart(df, image, title="OHLC evidence / last 120 observations")
@@ -86,6 +91,19 @@ try:
             "GBM fitted to log returns; jump parameters are scenario assumptions. Same input and seed reproduce the scenario."
         )
         st.json(r["volatility_forecast"])
+        evaluation = r["forecast_evaluation"]
+        st.subheader("Forecast comparison")
+        if evaluation["status"] == "evaluated":
+            st.dataframe(pd.DataFrame(evaluation["scores"]).T, width="stretch")
+            st.caption(
+                f"{evaluation['test_observations']} chronological one-step predictions; earlier observations only."
+            )
+            if not evaluation["beats_both_baselines_mae"]:
+                st.warning(
+                    "AR(1) does not beat both simple baselines on this sample. Treat it as a reference, not a demonstrated forecasting advantage."
+                )
+        else:
+            st.caption("At least 61 returns are needed for the comparison.")
     with memo:
         st.markdown(r["executive_report"])
         st.caption("Report mode: " + r["report_status"])

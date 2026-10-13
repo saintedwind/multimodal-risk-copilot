@@ -1,6 +1,8 @@
 """Shared analysis contract used by both UI and HTTP API."""
 
+import hashlib
 import numpy as np
+from src.time_series.evaluation import evaluate_forecast
 
 from src.llm_engine.risk_agent import RiskCopilotAgent
 from src.risk.metrics import _arr, risk_metrics
@@ -41,6 +43,14 @@ def analyze_returns(
         jump_sigma=jump_sigma,
     )
     return {
+        "audit": {
+            "schema_version": "1.1",
+            "returns_sha256": hashlib.sha256(
+                np.asarray(x, dtype="<f8").tobytes()
+            ).hexdigest(),
+            "hash_encoding": "little-endian float64 simple returns",
+        },
+        "forecast_evaluation": evaluate_forecast(x),
         "risk_metrics": risk_metrics(x, risk_free_rate),
         "monte_carlo_summary": mc["summary"],
         "return_forecast": forecast_returns(x, min(30, horizon_days)),

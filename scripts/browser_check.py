@@ -51,8 +51,15 @@ with (ROOT / "reports/browser.log").open("w") as log:
             page.get_by_text("Daily loss VaR / 95%", exact=True).wait_for(timeout=60000)
             page.get_by_role("tab", name="Scenario assumptions").click()
             page.get_by_text("GBM fitted to log returns;", exact=False).wait_for()
+            page.get_by_role(
+                "heading", name="One-step risk evaluation", exact=True
+            ).wait_for()
+            page.locator('[data-testid="stDataFrame"]:visible').first.wait_for()
+            page.screenshot(
+                path=str(ROOT / "reports/desk-risk-evaluation.png"), full_page=True
+            )
             page.get_by_role("tab", name="Price evidence").click()
-            page.locator("img").wait_for()
+            page.get_by_text("2747", exact=True).wait_for()
             page.screenshot(path=str(ROOT / "reports/desk-desktop.png"), full_page=True)
             page.get_by_role("tab", name="Review notes").click()
             page.get_by_text("Report mode: deterministic", exact=True).wait_for()

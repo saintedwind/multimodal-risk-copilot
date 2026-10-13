@@ -60,6 +60,15 @@ def main():
                             raise TimeoutError("API startup")
                         time.sleep(0.5)
                 data = pd.read_csv(ROOT / "data/sample_prices.csv")
+                official_rows = []
+                for pair in ["EURUSD", "GBPUSD"]:
+                    response = c.get("/analyze/reference", params={"symbol": pair})
+                    response.raise_for_status()
+                    value = response.json()
+                    assert value["risk_metrics"]["observations"] == 2747
+                    assert value["risk_evaluation"]["status"] == "evaluated"
+                    assert value["source_manifest"]["release"] == "H.10"
+                    official_rows.append({"symbol": pair, "response": value})
                 rows = []
                 backtests = []
                 for symbol in sorted(data.Symbol.unique()):
@@ -151,6 +160,7 @@ def main():
                     "dataset_sha256": hashlib.sha256(raw).hexdigest(),
                     "source_provenance": "unverified provided sample; no live market feed",
                     "rows": rows,
+                    "official_reference_rows": official_rows,
                     "backtests": backtests,
                     "checks": [
                         "both instruments analyzed separately",

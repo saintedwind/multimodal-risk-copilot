@@ -81,6 +81,30 @@ def test_image_only_does_not_fabricate_patterns():
     )
 
 
+def test_valid_png_structure_with_invalid_pixels_is_rejected(tmp_path):
+    import struct
+    import zlib
+
+    def chunk(kind, data):
+        return (
+            struct.pack(">I", len(data))
+            + kind
+            + data
+            + struct.pack(">I", zlib.crc32(kind + data) & 0xFFFFFFFF)
+        )
+
+    raw = (
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", struct.pack(">IIBBBBB", 1, 1, 8, 2, 0, 0, 0))
+        + chunk(b"IDAT", b"not-a-zlib-stream")
+        + chunk(b"IEND", b"")
+    )
+    path = tmp_path / "corrupt.png"
+    path.write_bytes(raw)
+    with pytest.raises(OSError):
+        analyze_chart(str(path))
+
+
 def test_flat_rsi_is_neutral():
     assert compute_rsi(pd.Series([100.0] * 30)).iloc[-1] == 50
 

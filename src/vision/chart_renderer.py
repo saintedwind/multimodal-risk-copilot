@@ -40,6 +40,10 @@ def render_chart(
     from src.time_series.preprocessor import prepare_prices
 
     df = prepare_prices(df)
+    df["sma20"] = df.Close.rolling(20).mean()
+    df["sma50"] = df.Close.rolling(50).mean()
+    df["macd"], df["signal"], df["hist"] = compute_macd(df.Close)
+    df["rsi"] = compute_rsi(df.Close)
     data = df.tail(120).copy().reset_index(drop=True)
     fig, (ax_main, ax_macd, ax_rsi) = plt.subplots(
         3,
@@ -99,8 +103,8 @@ def render_chart(
     )
 
     # Moving averages
-    ma20 = data["Close"].rolling(20).mean()
-    ma50 = data["Close"].rolling(50).mean()
+    ma20 = data["sma20"]
+    ma50 = data["sma50"]
     ax_main.plot(indices, ma20, color="#3b82f6", linewidth=1.2, label="SMA 20")
     ax_main.plot(indices, ma50, color="#f59e0b", linewidth=1.2, label="SMA 50")
     ax_main.set_title(title, fontsize=12, fontweight="bold", pad=10)
@@ -108,7 +112,7 @@ def render_chart(
     ax_main.legend(loc="upper left", framealpha=0.8)
 
     # MACD
-    macd, sig, hist = compute_macd(data["Close"])
+    macd, sig, hist = (data["macd"], data["signal"], data["hist"])
     ax_macd.plot(indices, macd, color="#3b82f6", label="MACD", linewidth=1.0)
     ax_macd.plot(indices, sig, color="#f97316", label="Signal", linewidth=1.0)
     ax_macd.bar(
@@ -123,7 +127,7 @@ def render_chart(
     ax_macd.legend(loc="upper left", fontsize=8)
 
     # RSI
-    rsi = compute_rsi(data["Close"])
+    rsi = data["rsi"]
     ax_rsi.plot(indices, rsi, color="#8b5cf6", linewidth=1.2)
     ax_rsi.axhline(70, color="#ef4444", linestyle="--", alpha=0.6)
     ax_rsi.axhline(30, color="#10b981", linestyle="--", alpha=0.6)

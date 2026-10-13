@@ -1,120 +1,97 @@
-"""LLM Risk Agent: combines quantitative analytics, vision signals, and generates CRO-level intelligence."""
-from __future__ import annotations
-import os
+"""Immutable numeric evidence; optional loopback model selects observations only."""
+
 import json
-from typing import Any, Dict, Optional
-from src.llm_engine.prompts import RISK_EXECUTIVE_SYSTEM_PROMPT, RISK_SYNTHESIS_USER_PROMPT_TEMPLATE
+import os
+from urllib.request import ProxyHandler, Request, build_opener
+
 
 class RiskCopilotAgent:
-    """Intelligent agent orchestrating risk synthesis via LLM with fallback rule-based reasoning."""
-
-    def __init__(self, api_key: Optional[str] = None, model: str = "gpt-4o"):
-        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
-        self.model = model
+    def __init__(self, api_key=None, model=None, provider=None):
+        self.provider = provider or os.getenv("REPORT_PROVIDER", "deterministic")
+        self.last_status = "deterministic"
+        if self.provider not in {"deterministic", "local"}:
+            raise ValueError("Provider must be deterministic or local")
 
     def synthesize_report(
-        self,
-        risk_metrics: Dict[str, Any],
-        mc_summary: Dict[str, Any],
-        ts_forecast: Dict[str, Any],
-        vol_forecast: Dict[str, Any],
-        pattern_data: Dict[str, Any],
-    ) -> str:
-        """Synthesize metrics into a cohesive narrative report using LLM or structured analytical generator."""
-        patterns_str = ", ".join([p.get("pattern", "N/A") for p in pattern_data.get("patterns_detected", [])])
-        
-        user_prompt = RISK_SYNTHESIS_USER_PROMPT_TEMPLATE.format(
-            var_95=risk_metrics.get("var_95", 0.0),
-            var_99=risk_metrics.get("var_99", 0.0),
-            cvar_95=risk_metrics.get("cvar_95", 0.0),
-            cvar_99=risk_metrics.get("cvar_99", 0.0),
-            sharpe=risk_metrics.get("sharpe", 0.0),
-            sortino=risk_metrics.get("sortino", 0.0),
-            max_drawdown=risk_metrics.get("max_drawdown", 0.0),
-            annualized_return=risk_metrics.get("annualized_return", 0.0),
-            mc_model=mc_summary.get("model", "gbm"),
-            mc_days=mc_summary.get("days", 252),
-            mc_paths=mc_summary.get("n_paths", 1000),
-            mc_mean_return=mc_summary.get("mean_return", 0.0),
-            mc_median_return=mc_summary.get("median_return", 0.0),
-            mc_loss_prob=mc_summary.get("loss_probability", 0.0),
-            forecast_vol=vol_forecast.get("annualized_volatility", 0.0),
-            forecast_return=ts_forecast.get("cumulative_return", 0.0),
-            regime=pattern_data.get("regime", "Neutral"),
-            patterns=patterns_str or "No distinct pattern",
-            support=f"{pattern_data.get('key_support', 0.0):.2f}",
-            resistance=f"{pattern_data.get('key_resistance', 0.0):.2f}",
-        )
-
-        if self.api_key:
-            try:
-                import openai
-                client = openai.OpenAI(api_key=self.api_key)
-                response = client.chat.completions.create(
-                    model=self.model,
-                    messages=[
-                        {"role": "system", "content": RISK_EXECUTIVE_SYSTEM_PROMPT},
-                        {"role": "user", "content": user_prompt}
-                    ],
-                    temperature=0.2,
-                )
-                return str(response.choices[0].message.content)
-            except Exception:
-                pass
-
-        # Robust, high-standard fallback report generator
-        return self._generate_deterministic_report(
-            risk_metrics, mc_summary, ts_forecast, vol_forecast, pattern_data
-        )
-
-    def _generate_deterministic_report(
-        self,
-        risk_metrics: Dict[str, Any],
-        mc_summary: Dict[str, Any],
-        ts_forecast: Dict[str, Any],
-        vol_forecast: Dict[str, Any],
-        pattern_data: Dict[str, Any],
-    ) -> str:
-        regime = pattern_data.get("regime", "Neutral")
-        loss_prob = mc_summary.get("loss_probability", 0.0)
-        var_95 = risk_metrics.get("var_95", 0.0)
-        cvar_95 = risk_metrics.get("cvar_95", 0.0)
-        sharpe = risk_metrics.get("sharpe", 0.0)
-        mdd = risk_metrics.get("max_drawdown", 0.0)
-
-        stance = "Defensive" if loss_prob > 0.45 or regime in ["Bearish Reversal", "Bearish Distribution"] else "Balanced"
-        if sharpe > 1.2 and loss_prob < 0.35 and "Bullish" in regime:
-            stance = "Constructive / Opportunistic"
-
+        self, risk_metrics, mc_summary, ts_forecast, vol_forecast, pattern_data
+    ):
+        fmt = lambda v: f"{v:.2%}" if v is not None else "undefined"
         lines = [
-            "# Multi-Modal Quantitative Risk Assessment Report",
-            f"**Executive Risk Stance:** {stance}",
-            "",
-            "## 1. Executive Summary",
-            f"- **Regime Diagnosis:** Current technical and structural environment is classified as **{regime}**.",
-            f"- **Loss Probability:** 1-year forward Monte Carlo simulation estimates a **{loss_prob:.1%}** probability of negative return.",
-            f"- **Tail Risk Expectation:** 95% Historical VaR is **{var_95:.2%}** with an expected tail loss (CVaR) of **{cvar_95:.2%}**.",
-            f"- **Historical Risk-Adjusted Quality:** Sharpe Ratio is **{sharpe:.2f}** against a maximum drawdown of **{mdd:.2%}**.",
-            "",
-            "## 2. Quantitative Tail Risk & Volatility Profile",
-            f"- **Value-at-Risk (99%):** {risk_metrics.get('var_99', 0.0):.2%}",
-            f"- **Conditional VaR / Expected Shortfall (99%):** {risk_metrics.get('cvar_99', 0.0):.2%}",
-            f"- **Forward Volatility:** Projected annualized volatility is **{vol_forecast.get('annualized_volatility', 0.0):.2%}** (EWMA/GARCH model).",
-            f"- **Sortino Downside Quality:** {risk_metrics.get('sortino', 0.0):.2f}",
-            "",
-            "## 3. Forward Scenario Simulation (Monte Carlo)",
-            f"- **Model:** {mc_summary.get('model', 'gbm').upper()} with {mc_summary.get('n_paths', 1000):,} paths over {mc_summary.get('days', 252)} trading days.",
-            f"- **Mean Projected Return:** {mc_summary.get('mean_return', 0.0):.2%}",
-            f"- **Median Projected Return:** {mc_summary.get('median_return', 0.0):.2%}",
-            "",
-            "## 4. Multi-Modal Vision & Technical Context",
-            f"- **Structural Support:** {pattern_data.get('key_support', 0.0):.2f}",
-            f"- **Structural Resistance:** {pattern_data.get('key_resistance', 0.0):.2f}",
-            f"- **Identified Patterns:** " + ", ".join([p.get('pattern', '') for p in pattern_data.get('patterns_detected', [])]),
-            "",
-            "## 5. Recommended Mitigation & Hedging Mandates",
-            "1. **Dynamic Stop-Loss Triggers:** Rebalance portfolio allocation if price crosses below structural support.",
-            "2. **Tail-Risk Hedging:** Acquire out-of-the-money put spreads or increase defensive cash buffer if 99% CVaR threshold is exceeded.",
-            "3. **Position Sizing:** Scale position size proportionally to inverse volatility to manage Sharpe drawdown limits."
+            f"Daily historical loss VaR 95%: {fmt(risk_metrics['var_95'])}; conditional tail mean: {fmt(risk_metrics['cvar_95'])}.",
+            f"Historical maximum drawdown: {fmt(risk_metrics['max_drawdown'])}.",
+            f"{mc_summary['model']} scenario loss probability over {mc_summary['days']} trading days: {fmt(mc_summary['loss_probability'])}; {mc_summary['n_paths']} paths; seed {mc_summary['seed']}.",
+            f"EWMA annualized volatility: {fmt(vol_forecast['annualized_volatility'])}.",
+            f"{ts_forecast['method']} baseline cumulative return over {ts_forecast['horizon_days']} days: {fmt(ts_forecast['cumulative_return'])}.",
+            "Technical patterns are unvalidated numeric rules, not a visual-model diagnosis.",
         ]
-        return "\n".join(lines)
+        selected = list(range(len(lines)))
+        self.last_status = "deterministic"
+        if self.provider == "local":
+            try:
+                schema = {
+                    "type": "object",
+                    "properties": {
+                        "steps": {
+                            "type": "array",
+                            "items": {"type": "integer"},
+                            "minItems": 1,
+                            "maxItems": 3,
+                        }
+                    },
+                    "required": ["steps"],
+                    "additionalProperties": False,
+                }
+                payload = {
+                    "model": "local",
+                    "temperature": 0,
+                    "max_tokens": 64,
+                    "chat_template_kwargs": {"enable_thinking": False},
+                    "response_format": {
+                        "type": "json_schema",
+                        "json_schema": {
+                            "name": "observations",
+                            "strict": True,
+                            "schema": schema,
+                        },
+                    },
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": "Select up to three distinct numbered observations most useful for a risk review. Output only JSON steps. Do not create advice. /no_think",
+                        },
+                        {
+                            "role": "user",
+                            "content": json.dumps(dict(enumerate(lines, 1))),
+                        },
+                    ],
+                }
+                req = Request(
+                    "http://127.0.0.1:8081/v1/chat/completions",
+                    data=json.dumps(payload).encode(),
+                    headers={"Content-Type": "application/json"},
+                )
+                with build_opener(ProxyHandler({})).open(req, timeout=30) as r:
+                    data = json.loads(r.read(32768))
+                c = data["choices"][0]
+                v = json.loads(c["message"]["content"])
+                steps = v["steps"]
+                if (
+                    c["finish_reason"] != "stop"
+                    or set(v) != {"steps"}
+                    or not 1 <= len(steps) <= 3
+                    or any(
+                        type(i) is not int or not 1 <= i <= len(lines) for i in steps
+                    )
+                    or len(set(steps)) != len(steps)
+                ):
+                    raise ValueError("Invalid selection")
+                selected = [i - 1 for i in steps]
+                self.last_status = "local_selection"
+                self.last_usage = data.get("usage", {})
+            except (OSError, ValueError, KeyError, TypeError, IndexError):
+                self.last_status = "local_unavailable_deterministic_fallback"
+        return (
+            "# Risk review notes\n\n"
+            + "\n".join("- " + lines[i] for i in selected)
+            + "\n\nDescriptive model outputs; not investment instructions. Scenario probabilities are conditional on fitted assumptions. Data provenance is not independently verified."
+        )

@@ -51,12 +51,30 @@ with (ROOT / "reports/browser.log").open("w") as log:
             page.get_by_text("Daily loss VaR / 95%", exact=True).wait_for(timeout=60000)
             page.get_by_role("tab", name="Scenario assumptions").click()
             page.get_by_text("GBM fitted to log returns;", exact=False).wait_for()
+            page.get_by_role("tab", name="Price evidence").click()
+            page.locator("img").wait_for()
             page.screenshot(path=str(ROOT / "reports/desk-desktop.png"), full_page=True)
             page.get_by_role("tab", name="Review notes").click()
             page.get_by_text("Report mode: deterministic", exact=True).wait_for()
-            page.set_viewport_size({"width": 390, "height": 844})
-            page.screenshot(path=str(ROOT / "reports/desk-mobile.png"), full_page=True)
-            assert page.get_by_role("heading", name="Risk review notes").is_visible()
+            mobile = b.new_page(viewport={"width": 390, "height": 844})
+            mobile.goto("http://127.0.0.1:8501")
+            title = mobile.get_by_role("heading", name="Market Risk Review Desk")
+            title.wait_for()
+            mobile.get_by_text("Daily loss VaR / 95%", exact=True).wait_for(
+                timeout=60000
+            )
+            assert title.evaluate(
+                "(e)=>{const r=e.getBoundingClientRect();const p=document.elementFromPoint(r.x+r.width/2,r.y+20);return e===p||e.contains(p)}"
+            ), "Mobile headline is obscured"
+            assert mobile.evaluate(
+                "document.documentElement.scrollWidth <= window.innerWidth"
+            ), "Mobile overflow"
+            mobile.screenshot(
+                path=str(ROOT / "reports/desk-mobile.png"), full_page=True
+            )
+            mobile.get_by_role("tab", name="Review notes").click()
+            mobile.get_by_text("Report mode: deterministic", exact=True).wait_for()
+            assert not mobile.locator('[data-testid="stException"]').count()
             assert not page.locator('[data-testid="stException"]').count()
             b.close()
             print(

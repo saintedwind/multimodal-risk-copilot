@@ -1,0 +1,340 @@
+{
+  "date": "2026-10-13",
+  "transport": "actual loopback HTTP / uvicorn",
+  "provider": "deterministic",
+  "dataset_sha256": "abff52d0908dda7a7ab1ece7f95f19290b39992810e017059ddb373c6d1dfb5d",
+  "source_provenance": "unverified provided sample; no live market feed",
+  "rows": [
+    {
+      "symbol": "AAPL",
+      "elapsed_seconds": 1.153,
+      "response": {
+        "risk_metrics": {
+          "var_95": 0.027498571515019103,
+          "cvar_95": 0.0369233816682655,
+          "historical_var_95": 0.027498571515019103,
+          "historical_cvar_95": 0.0369233816682655,
+          "parametric_var_95": 0.02796678388805421,
+          "var_99": 0.042143461954039035,
+          "cvar_99": 0.048378824754065713,
+          "historical_var_99": 0.042143461954039035,
+          "historical_cvar_99": 0.048378824754065713,
+          "parametric_var_99": 0.0403669622568883,
+          "max_drawdown": -0.15637085815825233,
+          "sharpe": 1.7119591601012414,
+          "sortino": 2.686233436655717,
+          "calmar": 3.660573664611019,
+          "annualized_return": 0.5724070452867236,
+          "observations": 329,
+          "return_type": "daily_simple",
+          "periods_per_year": 252,
+          "tail_definition": "sample conditional mean above linear loss quantile"
+        },
+        "monte_carlo_summary": {
+          "mean_return": 0.12394206874249923,
+          "median_return": 0.10849919670846608,
+          "loss_probability": 0.233,
+          "model": "gbm",
+          "n_paths": 1000,
+          "days": 60,
+          "seed": 42,
+          "mu": 0.4941253940095438,
+          "sigma": 0.2881589799383555,
+          "jump_intensity": 0.0,
+          "jump_mean": 0.0,
+          "jump_sigma": 0.0
+        },
+        "return_forecast": {
+          "method": "ar1",
+          "fallback_reason": null,
+          "mean_daily_return": [
+            0.0019200966537506739,
+            0.001965267045546846,
+            0.0019620575526497,
+            0.0019622855968230452,
+            0.0019622693935951014,
+            0.0019622705448834325,
+            0.001962270463080916,
+            0.0019622704688932323,
+            0.0019622704684802497,
+            0.0019622704685095934,
+            0.0019622704685075083,
+            0.0019622704685076566,
+            0.0019622704685076458,
+            0.0019622704685076466,
+            0.0019622704685076466,
+            0.0019622704685076466,
+            0.0019622704685076466,
+            0.0019622704685076466,
+            0.0019622704685076466,
+            0.0019622704685076466,
+            0.0019622704685076466,
+            0.0019622704685076466,
+            0.0019622704685076466,
+            0.0019622704685076466,
+            0.0019622704685076466,
+            0.0019622704685076466,
+            0.0019622704685076466,
+            0.0019622704685076466,
+            0.0019622704685076466,
+            0.0019622704685076466
+          ],
+          "cumulative_return": 0.06053249113583905,
+          "return_type": "daily_simple",
+          "horizon_days": 30
+        },
+        "volatility_forecast": {
+          "daily_volatility": [
+            0.021511275122346647,
+            0.021511275122346647,
+            0.021511275122346647,
+            0.021511275122346647,
+            0.021511275122346647,
+            0.021511275122346647,
+            0.021511275122346647,
+            0.021511275122346647,
+            0.021511275122346647,
+            0.021511275122346647,
+            0.021511275122346647,
+            0.021511275122346647,
+            0.021511275122346647,
+            0.021511275122346647,
+            0.021511275122346647,
+            0.021511275122346647,
+            0.021511275122346647,
+            0.021511275122346647,
+            0.021511275122346647,
+            0.021511275122346647,
+            0.021511275122346647,
+            0.021511275122346647,
+            0.021511275122346647,
+            0.021511275122346647,
+            0.021511275122346647,
+            0.021511275122346647,
+            0.021511275122346647,
+            0.021511275122346647,
+            0.021511275122346647,
+            0.021511275122346647
+          ],
+          "annualized_volatility": 0.3414809061457185,
+          "method": "ewma_constant_forward_variance",
+          "horizon_days": 30
+        },
+        "assumptions": {
+          "data_frequency": "daily trading observations",
+          "return_type": "simple",
+          "annualization": 252,
+          "drift_fit": "mean(log1p(r))*252 + sigma^2/2",
+          "provenance": "provided data, not independently verified",
+          "instrument": "AAPL"
+        },
+        "warnings": [
+          "Historical tail estimates are unstable with limited samples.",
+          "Jump parameters are user assumptions, not calibrated estimates."
+        ],
+        "patterns": {
+          "regime": "Neutral",
+          "patterns_detected": [
+            {
+              "pattern": "Mean Reverting Consolidation",
+              "bias": "Neutral",
+              "confidence": null,
+              "evidence_type": "unvalidated_rule",
+              "description": "Price oscillating within normal statistical bounds without terminal structural break."
+            }
+          ],
+          "key_support": 176.71,
+          "key_resistance": 229.24,
+          "multimodal_source": "RuleBasedTechnicalScanner",
+          "image_artifact": null
+        },
+        "executive_report": "# Risk review notes\n\n- Daily historical loss VaR 95%: 2.75%; conditional tail mean: 3.69%.\n- Historical maximum drawdown: -15.64%.\n- gbm scenario loss probability over 60 trading days: 23.30%; 1000 paths; seed 42.\n- EWMA annualized volatility: 34.15%.\n- ar1 baseline cumulative return over 30 days: 6.05%.\n- Technical patterns are unvalidated numeric rules, not a visual-model diagnosis.\n\nDescriptive model outputs; not investment instructions. Scenario probabilities are conditional on fitted assumptions. Data provenance is not independently verified.",
+        "report_status": "deterministic"
+      },
+      "image_validation": {
+        "sha256": "e2e2aa829da1ace369ddc9b5ff8f440c99b81f7b0be1c7463719e64f1326fa87",
+        "status": "decoded_and_verified_only"
+      }
+    },
+    {
+      "symbol": "SPY",
+      "elapsed_seconds": 0.951,
+      "response": {
+        "risk_metrics": {
+          "var_95": 0.013063778115025433,
+          "cvar_95": 0.016259375415480563,
+          "historical_var_95": 0.013063778115025433,
+          "historical_cvar_95": 0.016259375415480563,
+          "parametric_var_95": 0.013629262843882679,
+          "var_99": 0.017707226995275823,
+          "cvar_99": 0.020115978797977774,
+          "historical_var_99": 0.017707226995275823,
+          "historical_cvar_99": 0.020115978797977774,
+          "parametric_var_99": 0.01956001305832672,
+          "max_drawdown": -0.10484946453828957,
+          "sharpe": 1.2498637518489144,
+          "sortino": 1.9014135101428906,
+          "calmar": 1.6897350954785006,
+          "annualized_return": 0.17716781997247638,
+          "observations": 329,
+          "return_type": "daily_simple",
+          "periods_per_year": 252,
+          "tail_definition": "sample conditional mean above linear loss quantile"
+        },
+        "monte_carlo_summary": {
+          "mean_return": 0.04141376494431961,
+          "median_return": 0.03723424664189201,
+          "loss_probability": 0.294,
+          "model": "gbm",
+          "n_paths": 1000,
+          "days": 60,
+          "seed": 42,
+          "mu": 0.17263557396978219,
+          "sigma": 0.13801574577755554,
+          "jump_intensity": 0.0,
+          "jump_mean": 0.0,
+          "jump_sigma": 0.0
+        },
+        "return_forecast": {
+          "method": "ar1",
+          "fallback_reason": null,
+          "mean_daily_return": [
+            0.00046975110826701435,
+            0.000702601917135915,
+            0.0006837805928362719,
+            0.0006853019199474514,
+            0.0006851789511200531,
+            0.0006851888906868962,
+            0.0006851880872719891,
+            0.0006851881522119933,
+            0.0006851881469628946,
+            0.0006851881473871792,
+            0.0006851881473528842,
+            0.0006851881473556563,
+            0.0006851881473554322,
+            0.0006851881473554503,
+            0.0006851881473554489,
+            0.000685188147355449,
+            0.000685188147355449,
+            0.000685188147355449,
+            0.000685188147355449,
+            0.000685188147355449,
+            0.000685188147355449,
+            0.000685188147355449,
+            0.000685188147355449,
+            0.000685188147355449,
+            0.000685188147355449,
+            0.000685188147355449,
+            0.000685188147355449,
+            0.000685188147355449,
+            0.000685188147355449,
+            0.000685188147355449
+          ],
+          "cumulative_return": 0.020557853496923535,
+          "return_type": "daily_simple",
+          "horizon_days": 30
+        },
+        "volatility_forecast": {
+          "daily_volatility": [
+            0.008958001867856228,
+            0.008958001867856228,
+            0.008958001867856228,
+            0.008958001867856228,
+            0.008958001867856228,
+            0.008958001867856228,
+            0.008958001867856228,
+            0.008958001867856228,
+            0.008958001867856228,
+            0.008958001867856228,
+            0.008958001867856228,
+            0.008958001867856228,
+            0.008958001867856228,
+            0.008958001867856228,
+            0.008958001867856228,
+            0.008958001867856228,
+            0.008958001867856228,
+            0.008958001867856228,
+            0.008958001867856228,
+            0.008958001867856228,
+            0.008958001867856228,
+            0.008958001867856228,
+            0.008958001867856228,
+            0.008958001867856228,
+            0.008958001867856228,
+            0.008958001867856228,
+            0.008958001867856228,
+            0.008958001867856228,
+            0.008958001867856228,
+            0.008958001867856228
+          ],
+          "annualized_volatility": 0.142203871118398,
+          "method": "ewma_constant_forward_variance",
+          "horizon_days": 30
+        },
+        "assumptions": {
+          "data_frequency": "daily trading observations",
+          "return_type": "simple",
+          "annualization": 252,
+          "drift_fit": "mean(log1p(r))*252 + sigma^2/2",
+          "provenance": "provided data, not independently verified",
+          "instrument": "SPY"
+        },
+        "warnings": [
+          "Historical tail estimates are unstable with limited samples.",
+          "Jump parameters are user assumptions, not calibrated estimates."
+        ],
+        "patterns": {
+          "regime": "Bullish Expansion",
+          "patterns_detected": [
+            {
+              "pattern": "Resistance Breakout",
+              "bias": "Bullish",
+              "confidence": null,
+              "evidence_type": "unvalidated_rule",
+              "description": "Breakout above structural horizontal resistance."
+            }
+          ],
+          "key_support": 439.84,
+          "key_resistance": 490.92,
+          "multimodal_source": "RuleBasedTechnicalScanner",
+          "image_artifact": null
+        },
+        "executive_report": "# Risk review notes\n\n- Daily historical loss VaR 95%: 1.31%; conditional tail mean: 1.63%.\n- Historical maximum drawdown: -10.48%.\n- gbm scenario loss probability over 60 trading days: 29.40%; 1000 paths; seed 42.\n- EWMA annualized volatility: 14.22%.\n- ar1 baseline cumulative return over 30 days: 2.06%.\n- Technical patterns are unvalidated numeric rules, not a visual-model diagnosis.\n\nDescriptive model outputs; not investment instructions. Scenario probabilities are conditional on fitted assumptions. Data provenance is not independently verified.",
+        "report_status": "deterministic"
+      },
+      "image_validation": {
+        "sha256": "fe5a19038a99311f4926ac8dd458a848ff0b9a30bf7c121d580a8f0ca141a201",
+        "status": "decoded_and_verified_only"
+      }
+    }
+  ],
+  "backtests": [
+    {
+      "symbol": "AAPL",
+      "method": "expanding-window one-step AR1 vs zero-return baseline",
+      "test_observations": 100,
+      "ar1_mae": 0.015085954405448618,
+      "zero_baseline_mae": 0.014988991116068752,
+      "outperforms_baseline": false,
+      "independent_market_provenance": false
+    },
+    {
+      "symbol": "SPY",
+      "method": "expanding-window one-step AR1 vs zero-return baseline",
+      "test_observations": 100,
+      "ar1_mae": 0.006597026822594894,
+      "zero_baseline_mae": 0.006512323394376563,
+      "outperforms_baseline": false,
+      "independent_market_provenance": false
+    }
+  ],
+  "checks": [
+    "both instruments analyzed separately",
+    "real PNG decoded",
+    "same seed reproducible",
+    "resource budget rejected",
+    "malformed CSV rejected",
+    "mixed symbols rejected unless selected",
+    "multipart CSV succeeded"
+  ]
+}

@@ -25,6 +25,7 @@ jobs:
           cache: pip
       - run: pip install -e '.[dev]' playwright==1.51.0
       - run: python -m pytest
+      - run: python -m scripts.risk_benchmark
       - run: python -m scripts.live_check
       - run: python -m playwright install --with-deps chromium
       - run: python -m scripts.browser_check
@@ -46,6 +47,11 @@ jobs:
               result=json.load(response)
           assert result['risk_metrics']['observations']==329
           assert result['report_status']=='deterministic'
+          with urllib.request.urlopen('http://127.0.0.1:8000/analyze/reference?symbol=EURUSD',timeout=30) as response:
+              reference=json.load(response)
+          assert reference['risk_metrics']['observations']==2747
+          assert reference['source_manifest']['release']=='H.10'
+          assert reference['risk_evaluation']['status']=='evaluated'
           print('Docker image and live container analysis passed')
           PY
       - if: always()

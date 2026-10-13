@@ -8,7 +8,7 @@ A quantitative engineering portfolio by **Peyman Gholamhosseini**: attributed re
 
 ![Actual desktop execution](reports/desk-desktop.png)
 
-[Mobile capture](reports/desk-mobile.png) | [Verified tests and Docker execution](https://github.com/saintedwind/multimodal-risk-copilot/actions/runs/38410088772)
+[Mobile capture](reports/desk-mobile.png) | [Verified tests and Docker execution](https://github.com/saintedwind/multimodal-risk-copilot/actions/runs/38423530420) | [Release validation evidence](reports/reference-validation.md)
 
 ## Implemented
 

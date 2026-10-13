@@ -114,6 +114,9 @@ def analyze_chart(image_path: str, price_df=None):
             if image.width * image.height > 20_000_000:
                 raise ValueError("Image pixel budget exceeded")
             image.verify()
+        # CRC/structure verification alone does not decode compressed pixels.
+        with Image.open(p) as image:
+            image.load()
         artifact = {
             "sha256": hashlib.sha256(p.read_bytes()).hexdigest(),
             "status": "decoded_and_verified_only",

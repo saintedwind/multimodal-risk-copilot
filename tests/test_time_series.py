@@ -1,9 +1,13 @@
 """Tests for time series modules (standard-library unittest)."""
+
 import unittest
+
 import numpy as np
 import pandas as pd
-from src.time_series.preprocessor import prepare_prices
+
 from src.time_series.forecaster import forecast_returns, forecast_volatility
+from src.time_series.preprocessor import prepare_prices
+
 
 class TimeSeriesTests(unittest.TestCase):
     def test_prepare_prices(self):
@@ -12,7 +16,9 @@ class TimeSeriesTests(unittest.TestCase):
         close = 100 + np.cumsum(np.random.normal(0, 1, 100))
         df = pd.DataFrame({"Date": dates, "Close": close})
         out = prepare_prices(df, price_col="Close")
-        self.assertTrue({"log_return", "ewma_volatility", "trend", "residual"}.issubset(out.columns))
+        self.assertTrue(
+            {"log_return", "ewma_volatility", "trend", "residual"}.issubset(out.columns)
+        )
         self.assertEqual(len(out), 100)
 
     def test_forecast_returns(self):
@@ -30,6 +36,7 @@ class TimeSeriesTests(unittest.TestCase):
         self.assertIn("daily_volatility", vfc)
         self.assertEqual(len(vfc["daily_volatility"]), 15)
         self.assertGreater(vfc["annualized_volatility"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()

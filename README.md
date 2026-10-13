@@ -61,3 +61,9 @@ Start a structured-output-compatible llama.cpp server at **127.0.0.1:8081**. Set
 Loss is -r. VaR uses the [NumPy linear quantile](https://numpy.org/doc/stable/reference/generated/numpy.quantile.html); CVaR is the conditional sample mean above that loss threshold. Negative VaR is possible. Annualization assumes 252 trading observations; Sortino uses RMS shortfall below the effective daily risk-free rate. Zero denominators return null. EWMA forward variance is constant. Jump parameters are scenario assumptions.
 
 Local single-process demonstration: no authentication, distributed queues, verified live feed, calibrated visual inference or portfolio weights. Software tests do not establish financial performance or institutional readiness. Data rights/provenance are unverified. MIT software license.
+
+## Review improvements / 2026-10-13
+
+The dashboard compares AR(1) with zero-return and expanding historical-mean baselines, using the last 100 eligible observations and at least 60 preceding returns. MAE and RMSE are exported with the underlying predictions. This is a development comparison, not an untouched research holdout or proof of investment performance. Short histories explicitly skip evaluation.
+
+Each result includes a versioned audit record and SHA-256 of the little-endian float64 return vector. This identifies the numeric input, not the original file or its provenance. Dated uploads require ascending dates with at most one row per calendar day; missing trading days are not filled and exchange calendars are not validated. Indicators use the entire supplied history before displaying the latest 120 observations. Volume is excluded from the price selector.

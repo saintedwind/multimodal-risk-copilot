@@ -11,7 +11,7 @@ from src.vision.chart_renderer import render_chart
 
 st.set_page_config(page_title="Market Risk Review Desk", layout="wide")
 st.markdown(
-    "<style>.stApp{background:#f7f4ec}h1,h2,h3{font-family:Georgia,serif}div[data-testid='stMetric']{border-top:2px solid #315748;padding:12px}</style>",
+    "<style>.stApp{background:#f7f4ec}.stApp h1,.stApp h2,.stApp h3{font-family:Georgia,serif!important}div[data-testid='stMetric']{border-top:2px solid #315748;padding:12px}</style>",
     unsafe_allow_html=True,
 )
 st.title("Market Risk Review Desk")
@@ -19,7 +19,7 @@ st.caption("DAILY OBSERVATIONS / REPRODUCIBLE SCENARIOS / SOURCE REVIEW")
 st.info(
     "Included price data has unverified provenance. This demo does not represent a validated investment or visual prediction system."
 )
-uploaded = st.sidebar.file_uploader("Price history CSV", type="csv")
+uploaded = st.sidebar.file_uploader("Price history CSV", type="csv", max_upload_size=2)
 try:
     if uploaded and uploaded.size > 2_000_000:
         raise ValueError("CSV exceeds 2 MB")

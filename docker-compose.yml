@@ -1,0 +1,20 @@
+services:
+  api:
+    build: .
+    container_name: multimodal-risk-copilot-api
+    command: uvicorn src.app.api:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    restart: unless-stopped
+
+  dashboard:
+    build: .
+    container_name: multimodal-risk-copilot-dashboard
+    command: streamlit run src/app/dashboard.py --server.address 0.0.0.0 --server.port 8501
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    restart: unless-stopped

@@ -1,0 +1,54 @@
+name: Risk desk validation
+on:
+  push:
+    paths-ignore: ['README.md', 'reports/**']
+  pull_request:
+    paths-ignore: ['README.md', 'reports/**']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    env:
+      PYTHONPATH: .
+      REPORT_PROVIDER: deterministic
+      MPLBACKEND: Agg
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: pip install -e '.[dev]' playwright==1.51.0
+      - run: python -m pytest
+      - run: python -m scripts.live_check
+      - run: python -m playwright install --with-deps chromium
+      - run: python -m scripts.browser_check
+      - run: docker build -t risk-desk:test .
+      - run: |
+          docker run -d --rm --name risk-desk-test -p 127.0.0.1:8000:8000 risk-desk:test
+          python - <<'PY'
+          import json, time, urllib.request
+          for attempt in range(60):
+              try:
+                  with urllib.request.urlopen('http://127.0.0.1:8000/health',timeout=2) as response:
+                      assert json.load(response)['paid_api_enabled'] is False
+                  break
+              except OSError:
+                  time.sleep(1)
+          else:
+              raise RuntimeError('Container did not become ready')
+          with urllib.request.urlopen('http://127.0.0.1:8000/analyze/sample?symbol=SPY',timeout=30) as response:
+              result=json.load(response)
+          assert result['risk_metrics']['observations']==329
+          assert result['report_status']=='deterministic'
+          print('Docker image and live container analysis passed')
+          PY
+      - if: always()
+        run: docker stop risk-desk-test || true
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: risk-desk-validation
+          path: reports/

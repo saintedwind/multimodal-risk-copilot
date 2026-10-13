@@ -18,10 +18,13 @@ def prepare_prices(data, price_col="Close", span=20):
         dates = pd.to_datetime(out["Date"], errors="raise")
         if (
             dates.isna().any()
-            or dates.duplicated().any()
+            or dates.dt.normalize().duplicated().any()
             or not dates.is_monotonic_increasing
         ):
-            raise ValueError("Dates must be unique and ascending")
+            raise ValueError(
+                "Dates must be ascending with at most one observation per calendar day"
+            )
+        out["Date"] = dates
     price = pd.to_numeric(out[price_col], errors="raise").to_numpy(dtype=float)
     if not np.isfinite(price).all() or (price <= 0).any():
         raise ValueError("Prices must be finite and positive")

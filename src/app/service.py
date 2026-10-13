@@ -3,6 +3,7 @@
 import hashlib
 import numpy as np
 from src.time_series.evaluation import evaluate_forecast
+from src.risk.backtest import backtest_risk
 
 from src.llm_engine.risk_agent import RiskCopilotAgent
 from src.risk.metrics import _arr, risk_metrics
@@ -44,13 +45,14 @@ def analyze_returns(
     )
     return {
         "audit": {
-            "schema_version": "1.1",
+            "schema_version": "1.2",
             "returns_sha256": hashlib.sha256(
                 np.asarray(x, dtype="<f8").tobytes()
             ).hexdigest(),
             "hash_encoding": "little-endian float64 simple returns",
         },
         "forecast_evaluation": evaluate_forecast(x),
+        "risk_evaluation": backtest_risk(x),
         "risk_metrics": risk_metrics(x, risk_free_rate),
         "monte_carlo_summary": mc["summary"],
         "return_forecast": forecast_returns(x, min(30, horizon_days)),
@@ -88,6 +90,17 @@ def analyze_prices(df, price_col="Close", **options):
         }
     )
     out["assumptions"]["instrument"] = instrument
+    if "Date" in frame and out["risk_evaluation"]["status"] == "evaluated":
+        start = out["risk_evaluation"]["start_index"] + 1
+        out["risk_evaluation"]["evaluation_dates"] = [
+            str(frame.Date.iloc[start])[:10],
+            str(frame.Date.iloc[-1])[:10],
+        ]
+    if "source_manifest" in frame.attrs:
+        out["source_manifest"] = frame.attrs["source_manifest"]
+        out["assumptions"]["provenance"] = (
+            "Attributed H.10 reference-rate snapshot; checksum verified; not an executable quote"
+        )
     a = RiskCopilotAgent()
     out["executive_report"] = a.synthesize_report(
         out["risk_metrics"],

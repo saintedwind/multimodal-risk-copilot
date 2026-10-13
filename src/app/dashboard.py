@@ -7,6 +7,7 @@ import pandas as pd
 import streamlit as st
 
 from src.app.service import analyze_prices
+from src.data_sources import load_official
 from src.vision.chart_renderer import render_chart
 
 st.set_page_config(page_title="Market Risk Review Desk", layout="wide")
@@ -16,19 +17,31 @@ st.markdown(
 )
 st.title("Market Risk Review Desk")
 st.caption("DAILY OBSERVATIONS / REPRODUCIBLE SCENARIOS / SOURCE REVIEW")
-st.info(
-    "Included price data has unverified provenance. This demo does not represent a validated investment or visual prediction system."
-)
+st.caption("Reference-rate review. No trading recommendation or live market feed.")
 uploaded = st.sidebar.file_uploader("Price history CSV", type="csv", max_upload_size=2)
 try:
+    source = st.sidebar.selectbox(
+        "Included data",
+        ["Attributed H.10 reference rates", "Legacy OHLC sample (unverified)"],
+    )
     if uploaded and uploaded.size > 2_000_000:
         raise ValueError("CSV exceeds 2 MB")
-    df = pd.read_csv(
-        uploaded
-        if uploaded
-        else Path(__file__).resolve().parents[2] / "data/sample_prices.csv",
-        nrows=20001,
+    df = (
+        load_official()
+        if not uploaded and source == "Attributed H.10 reference rates"
+        else pd.read_csv(
+            uploaded
+            if uploaded
+            else Path(__file__).resolve().parents[2] / "data/sample_prices.csv",
+            nrows=20001,
+        )
     )
+    if "source_manifest" in df.attrs:
+        st.caption(
+            "Source: Federal Reserve Board / H.10 · 2015–2025 · USD per euro or pound · missing rates omitted · snapshot integrity checked"
+        )
+    else:
+        st.warning("Uploaded or legacy data has not been independently verified.")
     if len(df) > 20000:
         raise ValueError("CSV exceeds 20000 rows")
     if "Symbol" in df:
@@ -86,6 +99,34 @@ try:
             st.image(image.getvalue())
             st.json(r["patterns"])
     with scenario:
+        st.subheader("One-step risk evaluation")
+        risk_eval = r["risk_evaluation"]
+        if risk_eval["status"] == "evaluated":
+            rows = [
+                {
+                    "Method": name,
+                    "Exceptions": v["coverage"]["exceptions"],
+                    "Exception rate": f"{v['coverage']['exception_rate']:.2%}",
+                    "Expected rate": f"{v['coverage']['expected_exception_rate']:.2%}",
+                    "Quantile loss": f"{v['mean_quantile_loss']:.8f}",
+                    "QLIKE": f"{v['mean_qlike']:.4f}"
+                    if "mean_qlike" in v
+                    else "Not applicable",
+                }
+                for name, v in risk_eval["models"].items()
+            ]
+            st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
+            if "evaluation_dates" in risk_eval:
+                st.caption(
+                    "Evaluation interval: "
+                    + " to ".join(risk_eval["evaluation_dates"])
+                    + f" · {len(risk_eval['actual'])} predictions. The repository benchmark separately fixes 2020–2025."
+                )
+            st.caption(
+                "252 earlier observations per rolling window; EWMA decay 0.94; 95% VaR. Lower losses are better. Squared returns are a noisy variance proxy; coverage alone does not validate a model."
+            )
+        else:
+            st.caption("At least 272 returns needed for risk evaluation.")
         st.json(r["monte_carlo_summary"])
         st.write(
             "GBM fitted to log returns; jump parameters are scenario assumptions. Same input and seed reproduce the scenario."
@@ -111,6 +152,8 @@ try:
         import json
 
         st.json(r["assumptions"])
+        if "source_manifest" in r:
+            st.json(r["source_manifest"])
         st.download_button(
             "Download analysis JSON",
             json.dumps(r, indent=2),

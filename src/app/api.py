@@ -11,8 +11,9 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from src.app.service import analyze_prices, analyze_returns
+from src.data_sources import load_official
 
-app = FastAPI(title="Market Risk Review Desk", version="0.2.0")
+app = FastAPI(title="Market Risk Review Desk", version="0.3.0")
 slots = BoundedSemaphore(2)
 
 
@@ -51,7 +52,7 @@ def health():
     return {
         "status": "ok",
         "service": "Market Risk Review Desk",
-        "version": "0.2.0",
+        "version": "0.3.0",
         "paid_api_enabled": False,
     }
 
@@ -95,4 +96,14 @@ def full(
         with capacity():
             return analyze_prices(df, price_col)
     except (ValueError, OverflowError, UnicodeError, pd.errors.ParserError) as e:
+        raise HTTPException(400, str(e))
+
+
+@app.get("/analyze/reference")
+def reference(symbol: Literal["EURUSD", "GBPUSD"] = "EURUSD"):
+    try:
+        with capacity():
+            df = load_official()
+            return analyze_prices(df[df.Symbol == symbol].reset_index(drop=True))
+    except ValueError as e:
         raise HTTPException(400, str(e))

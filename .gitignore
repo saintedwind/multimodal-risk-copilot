@@ -33,3 +33,6 @@ Thumbs.db
 *.log
 *.png
 !data/sample_chart.png
+
+.runtime/
+!reports/*.png

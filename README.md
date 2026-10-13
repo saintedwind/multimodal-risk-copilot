@@ -6,6 +6,10 @@ A quantitative engineering portfolio by **Peyman Gholamhosseini**: inspect daily
 
 این نسخه محاسبات ریسک، سناریوسازی و نمودارهای قابل بررسی را ارائه می‌کند. آزمون‌ها و محدودیت‌ها شفاف ثبت می‌شوند؛ ادعای پیش‌بینی سودآور یا بینایی اعتبارسنجی‌شده ندارد.
 
+![Actual desktop execution](reports/desk-desktop.png)
+
+[Mobile capture](reports/desk-mobile.png) | [Verified tests and Docker execution](https://github.com/saintedwind/multimodal-risk-copilot/actions/runs/38394839478)
+
 ## Implemented
 
 - Simple daily returns for risk metrics; correctly fitted log-return drift for GBM. Invalid/non-finite input is rejected; undefined ratios are null.
@@ -37,6 +41,14 @@ python -m scripts.live_check
 ```
 
 API reference: http://127.0.0.1:8000/docs. `GET /analyze/sample?symbol=SPY`. `POST /analyze/metrics`: at least five finite daily simple returns greater than -1, horizon/path limits and seed. `POST /analyze/full`: multipart CSV, price_col and optional symbol; mixed instruments require selection. Close is required; Date/Symbol enable validation/selection. OHLC enables numeric heuristics. Without Date, supplied row order and daily frequency are assumed.
+
+Optional isolated browser checks:
+
+```sh
+python -m pip install playwright==1.51.0
+python -m playwright install chromium
+python -m scripts.browser_check
+```
 
 Docker: `docker compose up --build`. Ports bind to loopback; no .env required. Sample data belongs to the checkout, not a standalone wheel.
 

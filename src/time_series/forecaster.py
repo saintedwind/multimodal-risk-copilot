@@ -1,31 +1,72 @@
-"""Compact forecasting utilities with optional statistical-model fallbacks."""
-from __future__ import annotations
+"""AR(1) baseline and EWMA on daily simple returns, with truthful method labels."""
+
 import numpy as np
-import pandas as pd
+
+from src.risk.metrics import _arr
+
 
 def forecast_returns(returns, horizon=10, method="auto"):
-    """Forecast daily returns; uses AR(1), Holt-Winters when available, otherwise robust AR(1)."""
-    x=pd.Series(returns,dtype=float).dropna().to_numpy()
-    if len(x)<5 or horizon<1: raise ValueError("at least five returns and positive horizon required")
-    if method not in {"auto","ar","holt_winters"}: raise ValueError("unsupported method")
-    try:
-        from statsmodels.tsa.holtwinters import ExponentialSmoothing
-        if method=="holt_winters" and len(x)>=12:
-            fit=ExponentialSmoothing(x,trend="add",initialization_method="estimated").fit(optimized=True)
-            pred=np.asarray(fit.forecast(horizon),float)
-        else: raise ImportError
-    except Exception:
-        mean=float(np.mean(x)); centered=x-mean
-        phi=float(np.dot(centered[1:],centered[:-1])/(np.dot(centered[:-1],centered[:-1])+1e-12))
-        phi=float(np.clip(phi,-.95,.95)); pred=np.array([mean+phi**(i+1)*(x[-1]-mean) for i in range(horizon)])
-    return {"method":"holt_winters" if method=="holt_winters" and len(x)>=12 else "ar1_fallback","mean_daily_return":pred.tolist(),"cumulative_return":float(np.prod(1+pred)-1)}
+    x = _arr(returns)
+    if len(x) < 5 or not isinstance(horizon, int) or not 1 <= horizon <= 504:
+        raise ValueError("Require five returns and horizon 1..504")
+    if method not in {"auto", "ar", "holt_winters"}:
+        raise ValueError("Unsupported method")
+    used = "ar1"
+    fallback = None
+    if method == "holt_winters":
+        try:
+            from statsmodels.tsa.holtwinters import ExponentialSmoothing
 
-def forecast_volatility(returns, horizon=10, decay=.94):
-    """GARCH-like EWMA variance forecast with a stable unconditional fallback."""
-    x=np.asarray(pd.Series(returns,dtype=float).dropna());
-    if len(x)<3 or horizon<1: raise ValueError("insufficient returns or invalid horizon")
-    var=float(np.var(x,ddof=1)); v=float(np.var(x[:min(30,len(x))],ddof=1))
-    for r in x: v=decay*v+(1-decay)*float(r*r)
-    values=[v]
-    for _ in range(1,horizon): values.append(decay*values[-1]+(1-decay)*var)
-    return {"daily_volatility":np.sqrt(values).tolist(),"annualized_volatility":float(np.sqrt(np.mean(values)*252)),"method":"ewma_garch_like"}
+            if len(x) < 12:
+                raise ValueError("At least 12 observations required")
+            pred = np.asarray(
+                ExponentialSmoothing(x, trend="add", initialization_method="estimated")
+                .fit()
+                .forecast(horizon),
+                float,
+            )
+            used = "holt_winters"
+        except (ImportError, ValueError, RuntimeError):
+            fallback = "holt_winters_unavailable"
+    if used == "ar1":
+        mean = float(x.mean())
+        centered = x - mean
+        den = float(np.dot(centered[:-1], centered[:-1]))
+        phi = (
+            float(np.clip(np.dot(centered[1:], centered[:-1]) / den, -0.95, 0.95))
+            if den > 1e-12
+            else 0.0
+        )
+        pred = np.array(
+            [mean + phi ** (i + 1) * (x[-1] - mean) for i in range(horizon)]
+        )
+    if not np.isfinite(pred).all() or (pred <= -1).any():
+        raise ValueError("Forecast outside numerical domain")
+    return {
+        "method": used,
+        "fallback_reason": fallback,
+        "mean_daily_return": pred.tolist(),
+        "cumulative_return": float(np.expm1(np.log1p(pred).sum())),
+        "return_type": "daily_simple",
+        "horizon_days": horizon,
+    }
+
+
+def forecast_volatility(returns, horizon=10, decay=0.94):
+    x = _arr(returns)
+    if (
+        len(x) < 3
+        or not isinstance(horizon, int)
+        or not 1 <= horizon <= 504
+        or not 0 < decay < 1
+    ):
+        raise ValueError("Invalid EWMA inputs")
+    v = float(np.var(x, ddof=1))
+    for r in x:
+        v = decay * v + (1 - decay) * float(r * r)
+    return {
+        "daily_volatility": [float(np.sqrt(v))] * horizon,
+        "annualized_volatility": float(np.sqrt(v * 252)),
+        "method": "ewma_constant_forward_variance",
+        "horizon_days": horizon,
+    }

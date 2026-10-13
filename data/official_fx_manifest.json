@@ -1,0 +1,32 @@
+{
+  "publisher": "Board of Governors of the Federal Reserve System",
+  "release": "H.10",
+  "retrieved_at_utc": "2026-10-13T15:07:15.792359+00:00",
+  "interval": [
+    "2015-01-01",
+    "2025-12-31"
+  ],
+  "file_sha256": "01ca249b0e6e8beb4acc4e50e31ce1152de03f30fe484bd6c5fdf03e8cfd0c14",
+  "sources": [
+    {
+      "symbol": "EURUSD",
+      "url": "https://www.federalreserve.gov/releases/h10/hist/dat00_eu.htm",
+      "source_response_sha256": "d983f702cc2c3f7ceb51967f20111d03c2a478b26ecbde3f9dc11ecf2410566e",
+      "rows": 2748,
+      "missing_ND_rows_removed": 122,
+      "unit": "U.S. dollars per euro"
+    },
+    {
+      "symbol": "GBPUSD",
+      "url": "https://www.federalreserve.gov/releases/h10/hist/dat00_uk.htm",
+      "source_response_sha256": "5bc0f71b3c4ea4b14ffdaeae4fc1fc7734e74f4e4a934bbe7b6d2923b064bace",
+      "rows": 2748,
+      "missing_ND_rows_removed": 122,
+      "unit": "U.S. dollars per British pound"
+    }
+  ],
+  "reuse": "Public domain unless otherwise indicated; source attribution required",
+  "rights_url": "https://www.federalreserve.gov/disclaimer.htm",
+  "definition_url": "https://www.federalreserve.gov/releases/h10/about.htm",
+  "transformations": "ND omitted without forward fill; returns span consecutive available observations, including holiday gaps. No equity corporate actions apply. Reference quotes, not executable prices. Latest historical vintage, not point-in-time vintage."
+}

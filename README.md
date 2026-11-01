@@ -75,3 +75,7 @@ Run `python -m scripts.risk_benchmark` offline against the checked-in snapshot. 
 The dashboard compares AR(1) with zero-return and expanding historical-mean baselines, using the last 100 eligible observations and at least 60 preceding returns. MAE and RMSE are exported with the underlying predictions. This is a development comparison, not an untouched research holdout or proof of investment performance. Short histories explicitly skip evaluation.
 
 Each result includes a versioned audit record and SHA-256 of the little-endian float64 return vector. This identifies the numeric input, not the original file or its provenance. Dated uploads require ascending dates with at most one row per calendar day; missing trading days are not filled and exchange calendars are not validated. Indicators use the entire supplied history before displaying the latest 120 observations. Volume is excluded from the price selector.
+
+## Publication audit — 2026-11-01
+
+See [source/evidence review and retained limitations](reports/PUBLICATION_2026-11-01.md). Historical experiments retain their original dates; the publication check does not establish new model accuracy or deployment evidence.

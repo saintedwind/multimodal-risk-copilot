@@ -1,0 +1,2 @@
+# Keep the pinned snapshot byte-identical on Windows (core.autocrlf=true).
+/data/official_fx.csv -text

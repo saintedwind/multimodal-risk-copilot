@@ -11,6 +11,18 @@ concurrency:
   group: risk-desk-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  snapshot-integrity:
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Verify the pinned snapshot after checkout
+        run: python -c "import hashlib,json,pathlib; p=pathlib.Path('data'); m=json.loads((p/'official_fx_manifest.json').read_text(encoding='utf-8')); assert hashlib.sha256((p/'official_fx.csv').read_bytes()).hexdigest()==m['file_sha256'], 'Checkout changed pinned source bytes'"
   test:
     runs-on: ubuntu-24.04
     env:
